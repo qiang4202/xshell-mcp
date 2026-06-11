@@ -1,0 +1,26 @@
+{
+  "name": "xshell-mcp",
+  "version": "0.1.0",
+  "description": "MCP server that lets AI agents interact with Xshell through an in-session bridge script.",
+  "type": "module",
+  "bin": {
+    "xshell-mcp": "dist/server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/server.ts",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

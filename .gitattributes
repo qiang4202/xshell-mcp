@@ -1,0 +1,5 @@
+*.ts text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+xshell/*.js text eol=crlf
+xshell/sessions/*.js text eol=crlf
