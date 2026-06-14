@@ -1,0 +1,16 @@
+{
+  "bridgeRootDir": "C:\\Users\\80703\\Documents\\xshell-mcp-bridge",
+  "defaultSessionId": "default",
+  "sessionStaleAfterMs": 15000,
+  "dangerousCommands": {
+    "builtinRulesEnabled": true,
+    "blockedPatterns": [
+      "\\bcurl\\b.*\\|\\s*(sh|bash)\\b",
+      "\\bwget\\b.*\\|\\s*(sh|bash)\\b"
+    ],
+    "blockedLiterals": [
+      "rm -rf /",
+      "format c:"
+    ]
+  }
+}

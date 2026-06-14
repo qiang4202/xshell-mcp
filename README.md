@@ -51,6 +51,7 @@ npm run build
         "D:\\my-xshell-mcp\\dist\\server.js"
       ],
       "env": {
+        "XSHELL_MCP_CONFIG": "D:\\my-xshell-mcp\\xshell-mcp.config.json",
         "XSHELL_MCP_BRIDGE_DIR": "C:\\Users\\80703\\Documents\\xshell-mcp-bridge",
         "XSHELL_MCP_DEFAULT_SESSION": "default"
       }
@@ -73,6 +74,7 @@ npm run build
         "D:\\my-xshell-mcp"
       ],
       "env": {
+        "XSHELL_MCP_CONFIG": "D:\\my-xshell-mcp\\xshell-mcp.config.json",
         "XSHELL_MCP_BRIDGE_DIR": "C:\\Users\\80703\\Documents\\xshell-mcp-bridge",
         "XSHELL_MCP_DEFAULT_SESSION": "default"
       }
@@ -80,6 +82,52 @@ npm run build
   }
 }
 ```
+
+## 项目配置文件
+
+你可以用 JSON 配置文件统一管理桥接目录和禁止发送的命令规则。推荐复制模板：
+
+```powershell
+copy D:\my-xshell-mcp\xshell-mcp.config.example.json D:\my-xshell-mcp\xshell-mcp.config.json
+```
+
+然后按需编辑：
+
+```json
+{
+  "bridgeRootDir": "C:\\Users\\80703\\Documents\\xshell-mcp-bridge",
+  "defaultSessionId": "default",
+  "sessionStaleAfterMs": 15000,
+  "dangerousCommands": {
+    "builtinRulesEnabled": true,
+    "blockedPatterns": [
+      "\\bcurl\\b.*\\|\\s*(sh|bash)\\b",
+      "\\bwget\\b.*\\|\\s*(sh|bash)\\b"
+    ],
+    "blockedLiterals": [
+      "rm -rf /",
+      "format c:"
+    ]
+  }
+}
+```
+
+配置读取优先级：
+
+1. `XSHELL_MCP_CONFIG` 指定的配置文件。
+2. 当前工作目录下的 `xshell-mcp.config.json`。
+3. 程序内置默认值。
+
+字段说明：
+
+- `bridgeRootDir`：桥接根目录，等价于环境变量 `XSHELL_MCP_BRIDGE_DIR`。
+- `defaultSessionId`：默认会话 ID，等价于 `XSHELL_MCP_DEFAULT_SESSION`。
+- `sessionStaleAfterMs`：心跳多久没更新后判定会话离线，等价于 `XSHELL_MCP_SESSION_STALE_AFTER_MS`。
+- `dangerousCommands.builtinRulesEnabled`：是否启用内置危险命令拦截规则。
+- `dangerousCommands.blockedPatterns`：自定义正则规则，命中后禁止发送。
+- `dangerousCommands.blockedLiterals`：自定义固定文本规则，会按普通字符串匹配，不需要写正则转义。
+
+环境变量会覆盖配置文件里的同名基础设置，例如 `XSHELL_MCP_BRIDGE_DIR` 会覆盖 `bridgeRootDir`。
 
 ## 启动 Xshell 桥接脚本
 

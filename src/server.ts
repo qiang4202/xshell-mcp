@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
 
 type BridgeRequest =
   | { id: string; op: "send"; text: string; appendEnter: boolean }
@@ -26,29 +27,104 @@ type BridgeResponse = {
   error?: string;
 };
 
-const bridgeRootDir = path.resolve(
-  process.env.XSHELL_MCP_BRIDGE_DIR ??
-    path.join(os.homedir(), "Documents", "xshell-mcp-bridge"),
-);
+type ConfigFile = {
+  bridgeRootDir?: string;
+  defaultSessionId?: string;
+  sessionStaleAfterMs?: number;
+  dangerousCommands?: {
+    builtinRulesEnabled?: boolean;
+    blockedPatterns?: string[];
+    blockedLiterals?: string[];
+  };
+};
 
-const defaultSessionId = process.env.XSHELL_MCP_DEFAULT_SESSION ?? "default";
-const sessionStaleAfterMs = Number(process.env.XSHELL_MCP_SESSION_STALE_AFTER_MS ?? 15_000);
-
-const dangerousCommandPatterns = [
-  /\brm\s+(-[^\s]*[rf][^\s]*|-r|-f)\s+/i,
-  /\bshutdown\b/i,
-  /\breboot\b/i,
-  /\bpoweroff\b/i,
-  /\bhalt\b/i,
-  /\bmkfs(?:\.\w+)?\b/i,
-  /\bdd\s+.*\bof\s*=/i,
-  /\bchmod\s+(-[^\s]*R[^\s]*\s+)?777\b/i,
-  /\bchown\s+(-[^\s]*R[^\s]*\s+)/i,
-  /\bpasswd\b/i,
-  /:\(\)\s*\{\s*:\|:&\s*\};:/,
+const builtinDangerousCommandPatternSources = [
+  "\\brm\\s+(-[^\\s]*[rf][^\\s]*|-r|-f)\\s+",
+  "\\bshutdown\\b",
+  "\\breboot\\b",
+  "\\bpoweroff\\b",
+  "\\bhalt\\b",
+  "\\bmkfs(?:\\.\\w+)?\\b",
+  "\\bdd\\s+.*\\bof\\s*=",
+  "\\bchmod\\s+(-[^\\s]*R[^\\s]*\\s+)?777\\b",
+  "\\bchown\\s+(-[^\\s]*R[^\\s]*\\s+)",
+  "\\bpasswd\\b",
+  ":\\(\\)\\s*\\{\\s*:\\|:&\\s*\\};:",
 ];
 
 type ShellType = "posix" | "cmd" | "powershell" | "raw";
+
+const serverDir = path.dirname(fileURLToPath(import.meta.url));
+const projectRootDir = path.resolve(serverDir, "..");
+
+function parseConfigFile(text: string, configPath: string): ConfigFile {
+  try {
+    return JSON.parse(stripBom(text)) as ConfigFile;
+  } catch (error) {
+    throw new Error(`Failed to parse config file ${configPath}: ${(error as Error).message}`);
+  }
+}
+
+async function loadConfig() {
+  const explicitConfigPath = process.env.XSHELL_MCP_CONFIG
+    ? path.resolve(process.env.XSHELL_MCP_CONFIG)
+    : undefined;
+  const configPaths = explicitConfigPath
+    ? [explicitConfigPath]
+    : [path.resolve("xshell-mcp.config.json"), path.join(projectRootDir, "xshell-mcp.config.json")];
+
+  for (const configPath of configPaths) {
+    try {
+      return parseConfigFile(await fs.readFile(configPath, "utf8"), configPath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT" && !explicitConfigPath) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  return {};
+}
+
+function resolveConfigPath(value: string | undefined, fallback: string) {
+  if (!value) {
+    return path.resolve(fallback);
+  }
+  return path.resolve(value.replace(/^~/, os.homedir()));
+}
+
+function compilePattern(source: string) {
+  try {
+    return new RegExp(source, "i");
+  } catch (error) {
+    throw new Error(`Invalid dangerous command pattern "${source}": ${(error as Error).message}`);
+  }
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const config = await loadConfig();
+const bridgeRootDir = resolveConfigPath(
+  process.env.XSHELL_MCP_BRIDGE_DIR ?? config.bridgeRootDir,
+  path.join(os.homedir(), "Documents", "xshell-mcp-bridge"),
+);
+const defaultSessionId = process.env.XSHELL_MCP_DEFAULT_SESSION ?? config.defaultSessionId ?? "default";
+const sessionStaleAfterMs = Number(
+  process.env.XSHELL_MCP_SESSION_STALE_AFTER_MS ?? config.sessionStaleAfterMs ?? 15_000,
+);
+const dangerousCommandConfig = config.dangerousCommands ?? {};
+const configuredPatternSources = dangerousCommandConfig.blockedPatterns ?? [];
+const configuredLiteralSources = dangerousCommandConfig.blockedLiterals ?? [];
+const dangerousCommandPatterns = [
+  ...(dangerousCommandConfig.builtinRulesEnabled === false
+    ? []
+    : builtinDangerousCommandPatternSources.map(compilePattern)),
+  ...configuredPatternSources.map(compilePattern),
+  ...configuredLiteralSources.map((literal) => compilePattern(escapeRegExp(literal))),
+];
 
 function sanitizeSessionId(sessionId: string) {
   const trimmed = sessionId.trim();
