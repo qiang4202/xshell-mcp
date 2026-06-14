@@ -51,9 +51,7 @@ npm run build
         "D:\\my-xshell-mcp\\dist\\server.js"
       ],
       "env": {
-        "XSHELL_MCP_CONFIG": "D:\\my-xshell-mcp\\xshell-mcp.config.json",
-        "XSHELL_MCP_BRIDGE_DIR": "C:\\Users\\80703\\Documents\\xshell-mcp-bridge",
-        "XSHELL_MCP_DEFAULT_SESSION": "default"
+        "XSHELL_MCP_CONFIG": "D:\\my-xshell-mcp\\xshell-mcp.config.json"
       }
     }
   }
@@ -74,9 +72,7 @@ npm run build
         "D:\\my-xshell-mcp"
       ],
       "env": {
-        "XSHELL_MCP_CONFIG": "D:\\my-xshell-mcp\\xshell-mcp.config.json",
-        "XSHELL_MCP_BRIDGE_DIR": "C:\\Users\\80703\\Documents\\xshell-mcp-bridge",
-        "XSHELL_MCP_DEFAULT_SESSION": "default"
+        "XSHELL_MCP_CONFIG": "D:\\my-xshell-mcp\\xshell-mcp.config.json"
       }
     }
   }
@@ -127,7 +123,9 @@ copy D:\my-xshell-mcp\xshell-mcp.config.example.json D:\my-xshell-mcp\xshell-mcp
 - `dangerousCommands.blockedPatterns`：自定义正则规则，命中后禁止发送。
 - `dangerousCommands.blockedLiterals`：自定义固定文本规则，会按普通字符串匹配，不需要写正则转义。
 
-环境变量会覆盖配置文件里的同名基础设置，例如 `XSHELL_MCP_BRIDGE_DIR` 会覆盖 `bridgeRootDir`。
+推荐 MCP 客户端只配置 `XSHELL_MCP_CONFIG`，然后在 `xshell-mcp.config.json` 里维护 `bridgeRootDir`。这样 MCP Server 和 Xshell 里的 `bridge.js` 会读取同一个桥接目录配置，避免两边路径不一致。
+
+环境变量仍然可以覆盖配置文件里的同名基础设置，例如 `XSHELL_MCP_BRIDGE_DIR` 会覆盖 `bridgeRootDir`。一般情况下不需要再配置它。
 
 ## 启动 Xshell 桥接脚本
 
@@ -146,6 +144,14 @@ C:\Users\80703\Documents\xshell-mcp-bridge\<sessionId>\status.json
 ```
 
 MCP Server 会根据 `status.json` 的心跳判断会话是否在线。
+
+`xshell/bridge.js` 默认会读取：
+
+```text
+D:\my-xshell-mcp\xshell-mcp.config.json
+```
+
+并使用其中的 `bridgeRootDir`。如果你把项目放在其他目录，可以修改 `bridge.js` 顶部的 `CONFIG_PATH`，或通过会话脚本设置 `CONFIG_PATH_OVERRIDE` 后再加载 `bridge.js`。
 
 ## 多会话用法
 
@@ -337,7 +343,7 @@ Node.js MCP Server 返回结果给 MCP Client
 检查：
 
 - Xshell 中是否已经运行 `D:\my-xshell-mcp\xshell\bridge.js`。
-- `XSHELL_MCP_BRIDGE_DIR` 是否和脚本里的桥接目录一致。
+- `XSHELL_MCP_CONFIG` 是否指向正确配置文件，且配置里的 `bridgeRootDir` 是否和 Xshell 脚本读取的一致。
 - `status.json` 是否仍在更新。
 
 ### 调用工具超时

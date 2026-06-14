@@ -10,6 +10,7 @@ var BRIDGE_VERSION = "plain-js-20260608-2";
 var BACKSLASH = String.fromCharCode(92);
 var DQ = String.fromCharCode(34);
 var BRIDGE_ROOT_DIR = "C:" + BACKSLASH + "Users" + BACKSLASH + "80703" + BACKSLASH + "Documents" + BACKSLASH + "xshell-mcp-bridge";
+var CONFIG_PATH = "D:" + BACKSLASH + "my-xshell-mcp" + BACKSLASH + "xshell-mcp.config.json";
 
 var fso = new ActiveXObject("Scripting.FileSystemObject");
 var lastHeartbeatAt = 0;
@@ -114,8 +115,33 @@ function detectSessionId() {
   return sanitizeId(detected);
 }
 
+function loadBridgeRootDirFromConfig() {
+  var configPath = CONFIG_PATH;
+  var config = null;
+  if (typeof XSHELL_MCP_CONFIG != "undefined" && XSHELL_MCP_CONFIG) {
+    configPath = XSHELL_MCP_CONFIG;
+  }
+  if (typeof CONFIG_PATH_OVERRIDE != "undefined" && CONFIG_PATH_OVERRIDE) {
+    configPath = CONFIG_PATH_OVERRIDE;
+  }
+  try {
+    if (fso.FileExists(configPath)) {
+      config = parseJson(readFile(configPath));
+      if (config && config.bridgeRootDir) {
+        return String(config.bridgeRootDir);
+      }
+    }
+  } catch (e) {
+  }
+  return "";
+}
+
 if (typeof SESSION_ID == "undefined" || !SESSION_ID) {
   var SESSION_ID = detectSessionId();
+}
+var configuredBridgeRootDir = loadBridgeRootDirFromConfig();
+if (configuredBridgeRootDir) {
+  BRIDGE_ROOT_DIR = configuredBridgeRootDir;
 }
 if (typeof BRIDGE_ROOT_DIR_OVERRIDE != "undefined" && BRIDGE_ROOT_DIR_OVERRIDE) {
   BRIDGE_ROOT_DIR = BRIDGE_ROOT_DIR_OVERRIDE;

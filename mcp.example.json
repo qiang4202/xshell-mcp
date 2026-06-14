@@ -6,9 +6,7 @@
         "C:\\path\\to\\xshell-mcp\\dist\\server.js"
       ],
       "env": {
-        "XSHELL_MCP_CONFIG": "C:\\path\\to\\xshell-mcp\\xshell-mcp.config.json",
-        "XSHELL_MCP_BRIDGE_DIR": "C:\\Users\\80703\\Documents\\xshell-mcp-bridge",
-        "XSHELL_MCP_DEFAULT_SESSION": "default"
+        "XSHELL_MCP_CONFIG": "C:\\path\\to\\xshell-mcp\\xshell-mcp.config.json"
       }
     }
   }
