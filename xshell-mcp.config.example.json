@@ -1,7 +1,11 @@
 {
-  "bridgeRootDir": "C:\\Users\\80703\\Documents\\xshell-mcp-bridge",
+  "bridgeRootDir": "C:\\Users\\<your-user>\\Documents\\xshell-mcp-bridge",
   "defaultSessionId": "default",
-  "sessionStaleAfterMs": 15000,
+  "sessionStaleAfterMs": 30000,
+  "statusCacheTtlMs": 1000,
+  "pollMs": 30,
+  "transport": "stdio",
+  "httpPort": 8765,
   "dangerousCommands": {
     "builtinRulesEnabled": true,
     "blockedPatterns": [
