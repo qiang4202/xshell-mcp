@@ -1,5 +1,12 @@
 *.ts text eol=lf
 *.md text eol=lf
 *.json text eol=lf
+
+# bridge.js is ASCII and needs CRLF for the Xshell script host.
 xshell/*.js text eol=crlf
-xshell/sessions/*.js text eol=crlf
+
+# Session launchers are UTF-16LE (PowerShell -Encoding Unicode). They MUST stay
+# binary: git only looks for the byte pair 0D 0A, which never occurs in UTF-16LE,
+# so text mode thinks the file has bare LFs and injects a stray 0D into every
+# newline on checkout -- corrupting the encoding.
+xshell/sessions/*.js binary
